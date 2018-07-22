@@ -1,25 +1,155 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Reproducible Research Week 2 Assignment"
+author: "Michael Arthur"
+date: "July 22, 2018"
+output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+```
 
+
+# Part 1 
 ## Loading and preprocessing the data
 
+1. Load the data
+```{r Data Load}
 
+###
+activityData <- read.csv("./data/activity.csv")
+str(activityData)
+```
 
+# Part 2
 ## What is mean total number of steps taken per day?
 
+1. Calculate the total number of steps taken per day
+
+```{r}
+stepsPerDay <- 
+      activityData %>% 
+      na.omit() %>% 
+      group_by(date) %>% 
+      summarise(steps = (sum(steps)))
+```
 
 
-## What is the average daily activity pattern?
+2. Histogram of the total number of steps
+```{r Histogram}
+##histogram
+hist(stepsPerDay$steps,
+      main = "Frequency of Steps Per Day",
+      xlab = "Total Steps")
+```
 
+3. Calculate the mean and median of the total steps taken per day
 
+```{r}
+##mean
+mean(stepsPerDay$steps)
+##median
+median(stepsPerDay$steps)
+##total
+sum(stepsPerDay$steps)
+```
 
+# Part 3
+## What is the average daily activity pattern
+1. Make a time series plot of the 5-minute interval and the average number of steps taken, averaged across all days
+
+```{r}
+activityPattern <- activityData %>% 
+  group_by(interval) %>% 
+  na.omit() %>% 
+  dplyr::summarize(average = mean(steps))
+plot(activityPattern, type ="l")
+```
+
+2. Which 5-minute interval, on average across all the days contains the maximum number of steps?
+
+```{r}
+activityPattern %>% 
+  arrange(desc(average)) %>% 
+  top_n(1)
+```
+
+#Part 4
 ## Imputing missing values
 
+1. Calculate and report the number of missing values in the dataset
+```{r}
+##Imput missing values
+sum(is.na(activityData))
+```
+
+2. Devise a strategy for filling in all the missing values in the dataset:
+* Replace NA's with the average for the interval across all days
+
+3. Create a new dataset that is equal to the original dataset but with the missing data filled in
+```{r}
+### Replace NA's with average for the interval
+activityData.f <- activityData %>% 
+  group_by(interval) %>% 
+  mutate(steps = replace_na(steps, mean(steps, na.rm = TRUE)))
+```
+
+4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day.
+```{r}
+stepsPerDay.f <- 
+  activityData.f %>% 
+  group_by(date) %>% 
+  summarise(steps = (sum(steps)))
+
+hist(stepsPerDay.f$steps,
+     main = "Frequency of Steps Per Day (filled)",
+     xlab = "Total Steps")
+
+##mean
+mean(stepsPerDay.f$steps)
+##median
+median(stepsPerDay.f$steps)
+##total
+sum(stepsPerDay.f$steps)
+```
+Do these values differ from the estimates from the first part of the assignment? 
+* The mean does not, the median does slightly slightly here are the differences:
+***
+Mean
+```{r}
+##mean
+mean(stepsPerDay$steps) - mean(stepsPerDay.f$steps)
+```
+Median
+```{r}
+##median
+median(stepsPerDay$steps) -
+  median(stepsPerDay.f$steps)
+```
+
+What is the impact of imputing missing data on the estimates of the total daily number of steps?
+* It shifts the median slightly to the left
+
+# Part 5
+## Are there differences between weekends and weekdays
+
+1. Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+```{r}
+activityWeekend <- activityData.f %>% 
+  mutate(weekday = weekdays(ymd(date))) %>% 
+  mutate(DayType = as.factor(ifelse(weekday %in% c("Saturday", "Sunday"), "Weekend", "Weekday")))
+```
+
+2. Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+
+```{r}
+a  <- ggplot(data = activityWeekend, 
+       aes(x = interval, y= steps)) +
+      geom_line()
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+a + facet_grid(DayType ~ .) +
+  theme_minimal()
+```
