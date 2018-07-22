@@ -3,6 +3,7 @@ title: "Reproducible Research Week 2 Assignment"
 author: "Michael Arthur"
 date: "July 22, 2018"
 output: html_document
+keep_md: true
 ---
 
 ```{r setup, include=FALSE}
